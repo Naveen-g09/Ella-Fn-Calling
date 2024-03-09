@@ -1,11 +1,14 @@
 import  OpenAIAPI  from 'openai';
-import dotenv from 'dotenv'; 
-dotenv.config();
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  throw new Error('No OpenAI this? API key found');
-}
 
+require('dotenv').config()
+
+const client = new OpenAIAPI({ apiKey: process.env.OPENAI_API });
+
+if (!client) {
+    throw new Error('No OpenAI API key found');
+  }
+
+console.log(client);
 
 interface Doctor {
     name: string;
@@ -20,12 +23,7 @@ interface ReferToDocArgs {
     expertise_description: string;
 }
 
-
-
 type userMessage = string | null;
-
-const client = new OpenAIAPI({ apiKey: process.env.OPENAI_API_KEY });
-console.log(client);
 
 async function main() {
     const runner = client.beta.chat.completions
