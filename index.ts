@@ -1,14 +1,16 @@
-import  OpenAIAPI  from 'openai';
-
+import OpenAI from 'openai';
 require('dotenv').config()
 
-const client = new OpenAIAPI({ apiKey: process.env.OPENAI_API });
+const client = new OpenAI({ apiKey: process.env.OPENAI_API });
 
 if (!client) {
     throw new Error('No OpenAI API key found');
-  }
+}
 
-console.log(client);
+//TODO: ZOD validation for the function arguments
+//TODO: Add a function to handle the user message and return the doctor details
+//TODO: Response should be in json format
+//TODO: Response should be uni-directional, currently it is asking for user input after the first response
 
 interface Doctor {
     name: string;
@@ -25,117 +27,20 @@ interface ReferToDocArgs {
 
 type userMessage = string | null;
 
+// const response = await client.chat.completions.create({
+//     model: "gpt-3.5-turbo-0125",
+//     messages: messages,
+//     tools: tools,
+//     tool_choice: "auto",
+//   });
+//   const responseMessage = response.choices[0].message;
+
+
+
 async function main() {
     const runner = client.beta.chat.completions
-    .runTools({
-        model: "gpt-3.5-turbo",
-        messages: [
-            {
-                role: "system",
-                content: `You are a helpful assistant that can refer patients to doctors. You have a function called ReferToDoc that takes a type of doctor, a consultation mode, and an expertise description, and returns a doctor that fits those criteria.`
-            },
-            {
-                role: "user",
-                content: "I have a chronic back pain and I need to see a doctor. Can you help me?"
-            }
-        ],
-        tools: [
-            {
-                type: "function",
-                function: {
-                    name: "ReferToDoc",
-                    description: "Refers a patient to a doctor based on the type of doctor, consultation mode, and expertise description",
-                    parameters: {
-                        type: "object",
-                        properties: {
-                            type: {
-                                type: "string",
-                                enum: [
-                                    "General Physician",
-                                    "Specialist"
-                                ],
-                                description: "The type of doctor to refer to"
-                            },
-                            consultation_mode: {
-                                type: "string",
-                                enum: [
-                                    "Physical Examination",
-                                    "Virtual Consultation"
-                                ],
-                                description: "The mode of consultation preferred"
-                            },
-                            expertise_description: {
-                                type: "string",
-                                description: "A brief description of the required expertise for the doctor"
-                            }
-                        },
-                        required: [
-                            "type",
-                            "consultation_mode",
-                            "expertise_description"
-                        ]
-                    }
-                }
-
-            }
-        ],
-        max_tokens: 150,
-        temperature: 0.7,
-        stop: ["\n"]
-    })
-    .on('message',async (message) => {
-        console.log(message);
-    
-        const finalContent = await runner.finalContent();
-        console.log();
-        console.log('Final content:', finalContent);
-},);}
-
-
-main();
-
-/*{
-    "name": "ReferToDoc",
-    "description": "Refers a patient to a doctor based on the type of doctor, consultation mode, and expertise description",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "General Physician",
-            "Specialist"
-          ],
-          "description": "The type of doctor to refer to"
-        },
-        "consultation_mode": {
-          "type": "string",
-          "enum": [
-            "Physical Examination",
-            "Virtual Consultation"
-          ],
-          "description": "The mode of consultation preferred"
-        },
-        "expertise_description": {
-          "type": "string",
-          "description": "A brief description of the required expertise for the doctor"
-        }
-      },
-      "required": [
-        "type",
-        "consultation_mode",
-        "expertise_description"
-      ]
-    }
-  }*/
-
-
-
-
-/*async function prompt(): Promise<void> {
-    try {
-        const completions = await client.chat.completions.create({
-            model: "gpt-3.5-turbo",
+        .runTools({
+            model: "gpt-3.5-turbo-0125",
             messages: [
                 {
                     role: "system",
@@ -143,7 +48,48 @@ main();
                 },
                 {
                     role: "user",
-                    content: "I have a chronic back pain and I need to see a doctor. Can you help me?"
+                    content: "i am having a back pain and need to see a doctor"
+                }
+            ],
+            tools: [
+                {
+                    type: "function",
+                    function: {
+                        function: ReferToDoc,
+                        parse: JSON.parse,
+                        description: "Refers a patient to a doctor based on the type of doctor, consultation mode, and expertise description",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                type: {
+                                    type: "string",
+                                    enum: [
+                                        "General Physician",
+                                        "Specialist"
+                                    ],
+                                    description: "The type of doctor to refer to"
+                                },
+                                consultation_mode: {
+                                    type: "string",
+                                    enum: [
+                                        "Physical Examination",
+                                        "Virtual Consultation"
+                                    ],
+                                    description: "The mode of consultation preferred"
+                                },
+                                expertise_description: {
+                                    type: "string",
+                                    description: "A brief description of the required expertise for the doctor"
+                                }
+                            },
+                            required: [
+                                "type",
+                                "consultation_mode",
+                                "expertise_description"
+                            ]
+                        }
+                    }
+
                 }
             ],
             max_tokens: 150,
@@ -151,24 +97,61 @@ main();
             stop: ["\n"]
         });
 
-        // Parse the user message to extract the function call and its arguments
-        const userMessage = completions.choices[0].message.content;
-        if (userMessage) {
-            const match = userMessage.match(/ReferToDoc\((.*)\)/);
-            if (match) {
-                const args = JSON.parse(match[1]);
-                const doctor = ReferToDoc(args);
-                console.log("Referred doctor:", doctor);
-            }
-        }
-        const choices = completions.choices; // Access choices directly from completions
-        if (choices && choices[0] && choices[0].message && choices[0].message.content) {
-            console.log("Generated message:", choices[0].message.content);
-        } else {
-            console.error("Invalid response structure or no content in the choices.");
-        }
+
+    runner.on('message', async (message) => {
+        // console.log(message);
+    });
+
+    try {
+        const finalContent = await runner.finalContent();
+        console.log('Response:', finalContent);
     } catch (error) {
         console.error("Error:", error);
     }
 }
-*/
+
+async function ReferToDoc(args: ReferToDocArgs): Promise<Doctor> {
+    const doctors: Doctor[] = [
+        {
+            name: 'Dr. Smith',
+            type: 'General Physician',
+            consultation_mode: 'Physical Examination',
+            expertise_description: 'General health checkup and common illnesses',
+        },
+        {
+            name: 'Dr. Johnson',
+            type: 'General Physician',
+            consultation_mode: 'Virtual Consultation',
+            expertise_description: 'General health checkup and common illnesses',
+        },
+        {
+            name: 'Dr. Lee',
+            type: 'Specialist',
+            consultation_mode: 'Physical Examination',
+            expertise_description: 'Orthopedic and sports injuries',
+        },
+        {
+            name: 'Dr. Patel',
+            type: 'Specialist',
+            consultation_mode: 'Virtual Consultation',
+            expertise_description: 'Orthopedic and sports injuries',
+        },
+
+    ];
+
+    const doctor = doctors.find(
+        (doctor) =>
+            doctor.type === args.type &&
+            doctor.consultation_mode === args.consultation_mode &&
+            doctor.expertise_description.includes(args.expertise_description)
+    );
+
+    if (!doctor) {
+        throw new Error('No doctor found that matches the criteria');
+    }
+
+    return doctor;
+}
+
+
+main();
