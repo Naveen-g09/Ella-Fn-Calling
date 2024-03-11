@@ -151,7 +151,7 @@ async function ReferToDoc(args: ReferToDocArgs): Promise<Doctor> {
     if (!doctor) {
         throw new Error(`No doctor found that matches the criteria: Type - ${args.type}, Consultation Mode - ${args.consultation_mode}, Expertise Description - ${args.expertise_description}`);
     }
-    
+
 
     return doctor;
 }
@@ -164,7 +164,7 @@ app.get('/', async (req, res) => {
         const result = await main();
         const message = result instanceof Error ? result.message : result;
         res.send(message);
-    } catch (error:any) {
+    } catch (error: any) {
         console.error(error);
         res.status(500).send(error.message);
     }
@@ -174,4 +174,4 @@ app.get('/', async (req, res) => {
 
 app.listen(port, () => {
     console.log('Started proxy express server');
-  });
+});
