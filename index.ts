@@ -46,7 +46,7 @@ async function main() {
                 },
                 {
                     role: "user",
-                    content: "got a normal cold"
+                    content: "common illness"
                 }
             ],
             tools: [
@@ -147,8 +147,9 @@ async function ReferToDoc(args: ReferToDocArgs): Promise<Doctor> {
     );
 
     if (!doctor) {
-        throw new Error('No doctor found that matches the criteria');
+        throw new Error(`No doctor found that matches the criteria: Type - ${args.type}, Consultation Mode - ${args.consultation_mode}, Expertise Description - ${args.expertise_description}`);
     }
+    
 
     return doctor;
 }
@@ -161,13 +162,16 @@ main();
 app.get('/', async (req, res) => {
     try {
         const result = await main();
-        res.send(result);
-    } catch (error) {
+        const message = result instanceof Error ? result.message : result;
+        res.send(message);
+    } catch (error:any) {
         console.error(error);
-        res.status(500).send('An error occurred');
+        res.status(500).send(error.message);
     }
 });
 
-app.listen('3000', () => {
+
+
+app.listen(port, () => {
     console.log('Started proxy express server');
   });
