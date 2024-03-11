@@ -1,11 +1,13 @@
 import OpenAI from 'openai';
 require('dotenv').config()
 import express from 'express';
+import cors from 'cors';
 
 const app = express();
 const port = 3000;
 
 app.use(express.text());
+app.use(cors());
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API });
 
@@ -156,8 +158,6 @@ async function ReferToDoc(args: ReferToDocArgs): Promise<Doctor> {
 
 
 main();
-
-//TODO: Display data on the browser using express
 
 app.get('/', async (req, res) => {
     try {
