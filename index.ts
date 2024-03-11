@@ -1,5 +1,11 @@
 import OpenAI from 'openai';
 require('dotenv').config()
+import express from 'express';
+
+const app = express();
+const port = 3000;
+
+app.use(express.text());
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API });
 
@@ -27,14 +33,6 @@ interface ReferToDocArgs {
 
 type userMessage = string | null;
 
-// const response = await client.chat.completions.create({
-//     model: "gpt-3.5-turbo-0125",
-//     messages: messages,
-//     tools: tools,
-//     tool_choice: "auto",
-//   });
-//   const responseMessage = response.choices[0].message;
-
 
 
 async function main() {
@@ -48,7 +46,7 @@ async function main() {
                 },
                 {
                     role: "user",
-                    content: "i am having a back pain and need to see a doctor"
+                    content: "got a normal cold"
                 }
             ],
             tools: [
@@ -105,8 +103,10 @@ async function main() {
     try {
         const finalContent = await runner.finalContent();
         console.log('Response:', finalContent);
+        return finalContent;
     } catch (error) {
         console.error("Error:", error);
+        return error;
     }
 }
 
@@ -155,3 +155,19 @@ async function ReferToDoc(args: ReferToDocArgs): Promise<Doctor> {
 
 
 main();
+
+//TODO: Display data on the browser using express
+
+app.get('/', async (req, res) => {
+    try {
+        const result = await main();
+        res.send(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('An error occurred');
+    }
+});
+
+app.listen('3000', () => {
+    console.log('Started proxy express server');
+  });
